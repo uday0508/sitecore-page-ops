@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Page Operations">
+  <rect width="512" height="512" rx="112" fill="#6E3FFF"/>
+  <!-- the site: a parent page and its structure -->
+  <g fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="186" y="88" width="140" height="104" rx="26"/>
+    <path d="M256 192v60"/>
+    <path d="M152 300v-48h208v48"/>
+    <rect x="88" y="300" width="128" height="124" rx="26"/>
+  </g>
+  <!-- the page you're working on: solid, with a folded corner -->
+  <path d="M322 300h56l46 46v54a24 24 0 0 1-24 24H322a24 24 0 0 1-24-24v-76a24 24 0 0 1 24-24z" fill="#fff"/>
+  <path d="M378 300v30a16 16 0 0 0 16 16h30" fill="none" stroke="#6E3FFF" stroke-width="18" stroke-linejoin="round"/>
+</svg>
