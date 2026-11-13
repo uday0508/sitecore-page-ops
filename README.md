@@ -48,6 +48,18 @@ Google's API no longer offers a 404 report, so the app works it out: it reads th
 
 Sign-in happens in a Google pop-up in the author's browser with read-only access. Nothing is stored on a server. Without it, import the "Not found (404)" CSV that Search Console exports, or any CSV of URLs from your logs.
 
+## Deploy to Vercel
+
+1. Import the GitHub repo in Vercel. The defaults are right (framework: Next.js, build: `next build`).
+2. Don't set `NEXT_PUBLIC_MOCK` (or set it to `0`) so the app talks to Sitecore.
+3. Before the first deploy, install the Blok components and commit them: `npm run ui:install`, then commit `src/components/ui`, `src/lib/icon.tsx` and the updated `globals.css`. The script installs only the 23 components the app uses; installing the whole Blok library adds components (calendar, date picker) that don't build with current dependencies.
+4. Use the deployment URL for the extension points below, and for the listing links:
+   - Support: `https://your-host/support`
+   - Privacy policy: `https://your-host/privacy`
+   - Terms: `https://your-host/terms`
+
+The public pages don't connect to Sitecore, so they load anywhere. Publisher details on them (company name, emails, hosting, governing law, response time) are in `src/lib/company.ts`: check them before submitting.
+
 ## Register the app (Sitecore Cloud Portal → Developer studio)
 
 1. Create a custom app and set the deployed URL.
