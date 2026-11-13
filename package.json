@@ -12,6 +12,9 @@
     "ui:install": "npx shadcn@latest add https://blok.sitecore.com/r/theme.json https://blok.sitecore.com/r/alert.json https://blok.sitecore.com/r/alert-dialog.json https://blok.sitecore.com/r/badge.json https://blok.sitecore.com/r/button.json https://blok.sitecore.com/r/checkbox.json https://blok.sitecore.com/r/command.json https://blok.sitecore.com/r/dialog.json https://blok.sitecore.com/r/dropdown-menu.json https://blok.sitecore.com/r/input.json https://blok.sitecore.com/r/kbd.json https://blok.sitecore.com/r/label.json https://blok.sitecore.com/r/popover.json https://blok.sitecore.com/r/progress.json https://blok.sitecore.com/r/radio-group.json https://blok.sitecore.com/r/select.json https://blok.sitecore.com/r/sheet.json https://blok.sitecore.com/r/skeleton.json https://blok.sitecore.com/r/sonner.json https://blok.sitecore.com/r/switch.json https://blok.sitecore.com/r/table.json https://blok.sitecore.com/r/tabs.json https://blok.sitecore.com/r/textarea.json https://blok.sitecore.com/r/tooltip.json --overwrite --yes"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@mdi/js": "7.4.47",
     "@sitecore-marketplace-sdk/ai": "0.2.0",
     "@sitecore-marketplace-sdk/client": "0.5.0",
@@ -19,11 +22,16 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
+    "input-otp": "^1.5.0",
+    "embla-carousel-react": "^8.6.0",
     "next": "16.4.6",
     "next-themes": "^0.4.6",
     "radix-ui": "1.8.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "react-resizable-panels": "^3.0.3",
+    "react-select": "^5.10.2",
+    "recharts": "^2.15.4",
     "sonner": "2.0.8",
     "tailwind-merge": "3.7.0"
   },
