@@ -94,6 +94,17 @@ export function SettingsSection({ siteName }: { siteName?: string }) {
       </section>
 
       <section className="flex flex-col gap-5">
+        <h2 className="text-lg font-semibold">Page builder link</h2>
+        <Field
+          id={`${id}-pb`}
+          label="Link pattern"
+          hint="Used by “Edit in Page builder”. Tokens: {tenant} {organization} {itemId} {language} {site} {version}. Leave empty to hide the button."
+        >
+          <Input id={`${id}-pb`} className="font-path" value={s.pageBuilderUrl} onChange={(e) => up("pageBuilderUrl", e.target.value.trim())} />
+        </Field>
+      </section>
+
+      <section className="flex flex-col gap-5">
         <h2 className="text-lg font-semibold">Advanced</h2>
         <Field id={`${id}-tpl`} label="Redirect Map template" hint="Used when the map has to be created.">
           <Input id={`${id}-tpl`} className="font-path" value={s.redirectMapTemplatePath} onChange={(e) => up("redirectMapTemplatePath", e.target.value)} />

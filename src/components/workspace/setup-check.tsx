@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { relativeTime } from "@/components/ops/primitives";
 import { Spinner } from "@/components/ops/spinner";
 import { useSettings } from "@/hooks/use-settings";
+import { useMarketplace } from "@/lib/marketplace/provider";
 import { Icon } from "@/lib/icon";
 import { loadSetup, runSetupCheck, saveSetup, type SetupResult } from "@/lib/setup";
 import type { SitecoreApi } from "@/lib/sitecore/api";
@@ -16,13 +17,14 @@ const TONE = { pass: "text-success-fg", warn: "text-warning-fg", fail: "text-dan
 
 export function useSetupResult(api: SitecoreApi | null) {
   const [settings] = useSettings();
+  const mp = useMarketplace();
   const [result, setResult] = useState<SetupResult | null>(null);
   const [running, setRunning] = useState(false);
   const run = async () => {
     if (!api) return;
     setRunning(true);
     try {
-      const r = await runSetupCheck(api, settings);
+      const r = await runSetupCheck(api, settings, { tenant: mp.environment?.tenant, organization: mp.environment?.organization });
       saveSetup(r);
       setResult(r);
     } finally {

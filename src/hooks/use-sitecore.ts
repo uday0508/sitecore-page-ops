@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { setCurrentUser, syncActivity } from "@/lib/activity";
 import { syncPending } from "@/lib/pending";
-import { DEFAULT_SETTINGS, saveSettings, setSettingsWriter, type AppSettings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, normalizeSettings, saveSettings, setSettingsWriter, type AppSettings } from "@/lib/settings";
 import { teamStoreFor } from "@/lib/store/team";
 import { getVersion, shared, subscribeSiteData } from "@/lib/sitecore/site-cache";
 import { useMarketplace } from "@/lib/marketplace/provider";
@@ -38,7 +38,12 @@ export function useSitecoreApi(site: SiteRef | null): SitecoreApi | null {
     void (async () => {
       await store.ensure();
       const team = await store.getSettings<Partial<AppSettings>>().catch(() => null);
-      if (!cancelled && team) saveSettings({ ...DEFAULT_SETTINGS, ...team }, { share: false });
+      if (!cancelled && team) {
+        const next = normalizeSettings(team);
+        // Shared settings still on an old default get updated for the whole team.
+        const migrated = JSON.stringify(next) !== JSON.stringify({ ...DEFAULT_SETTINGS, ...team });
+        saveSettings(next, { share: migrated });
+      }
       await sync();
     })();
     const onFocus = () => void sync();
@@ -153,4 +158,24 @@ export function usePending(site: string | null): PendingItem[] {
 
 export function useJobs() {
   return useSyncExternalStore(subscribeJobs, getJobs, getJobs);
+}
+
+/* ---------- Page builder link ---------- */
+import { pageBuilderUrl } from "@/lib/page-builder";
+
+export function usePageBuilderLink() {
+  const mp = useMarketplace();
+  const [settings] = useSettings();
+  return (page: Pick<PageRef, "id" | "language"> & { version?: number }, siteName: string) => {
+    const url = pageBuilderUrl(page, { site: siteName, tenant: mp.environment?.tenant, organization: mp.environment?.organization }, settings);
+    if (!url) return null;
+    return {
+      url,
+      open: () => {
+        const c = mp.client;
+        if (c) void c.navigateToExternalUrl(url, true).catch(() => window.open(url, "_blank", "noopener"));
+        else window.open(url, "_blank", "noopener");
+      },
+    };
+  };
 }

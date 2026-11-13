@@ -25,12 +25,17 @@ export interface AppSettings {
   gscClientId: string;
   /** Search Console property, e.g. sc-domain:example.com or https://www.example.com/ */
   gscProperty: string;
+  /**
+   * Page builder link. Tokens: {tenant} {organization} {itemId} {language} {site} {version}.
+   * Empty tokens are dropped from the query string.
+   */
+  pageBuilderUrl: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   redirectFolderPath: "{site}/Settings/Redirects",
   managedMapName: "Page Operations",
-  redirectMapTemplatePath: "/sitecore/templates/Feature/JSS Experience Accelerator/Redirects/Redirect Map",
+  redirectMapTemplatePath: "/sitecore/templates/Foundation/Experience Accelerator/Redirects/Redirect Map",
   defaultRedirectType: "Redirect301",
   preserveQueryString: true,
   collapseChains: true,
@@ -41,7 +46,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
   staleMonths: 12,
   gscClientId: "",
   gscProperty: "",
+  pageBuilderUrl: "https://pages.sitecorecloud.io/editor?tenantName={tenant}&organization={organization}&sc_itemid={itemId}&sc_lang={language}&sc_site={site}&sc_version={version}",
 };
+
+/** Earlier defaults that should follow the new default instead of being kept as a choice. */
+const OLD_DEFAULTS: Partial<Record<keyof AppSettings, string[]>> = {
+  redirectMapTemplatePath: ["/sitecore/templates/Feature/JSS Experience Accelerator/Redirects/Redirect Map"],
+};
+
+/** Fill in new fields and move values still on an old default to the current default. */
+export function normalizeSettings(s: Partial<AppSettings>): AppSettings {
+  const out = { ...DEFAULT_SETTINGS, ...s } as AppSettings;
+  for (const [k, olds] of Object.entries(OLD_DEFAULTS) as [keyof AppSettings, string[]][]) {
+    if (olds.includes(String(out[k]))) (out as unknown as Record<string, unknown>)[k] = DEFAULT_SETTINGS[k];
+  }
+  return out;
+}
 
 const KEY = "page-ops:settings:v1";
 
@@ -50,7 +70,7 @@ export function loadSettings(): AppSettings {
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<AppSettings>) };
+    return normalizeSettings(JSON.parse(raw) as Partial<AppSettings>);
   } catch {
     return DEFAULT_SETTINGS;
   }

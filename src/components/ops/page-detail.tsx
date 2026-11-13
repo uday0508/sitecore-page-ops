@@ -15,6 +15,7 @@ import {
   mdiFolderMoveOutline,
   mdiFormTextboxPassword,
   mdiOpenInNew,
+  mdiPencilBoxOutline,
   mdiProgressClock,
   mdiTrashCanOutline,
 } from "@mdi/js";
@@ -30,7 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAsync } from "@/hooks/use-async";
-import { useRedirectState } from "@/hooks/use-sitecore";
+import { usePageBuilderLink, useRedirectState } from "@/hooks/use-sitecore";
 import { logActivity } from "@/lib/activity";
 import { Icon } from "@/lib/icon";
 import { useMarketplace } from "@/lib/marketplace/provider";
@@ -187,6 +188,7 @@ export function PageDetail({
   const hiding = (redirects.data?.rules ?? []).filter((r) => !isPattern(r.source) && samePath(r.source, page.route));
   const isHome = page.route === "/";
   const p = page.permissions;
+  const builder = usePageBuilderLink()({ id: page.id, language: page.language, version: page.meta?.version }, api.site.name);
 
   const open = (a: Action, name?: string) => {
     setInitialName(name);
@@ -252,12 +254,20 @@ export function PageDetail({
               )}
             </div>
           </div>
-          {preview.data && (
-            <Button variant="ghost" size="sm" onClick={() => void client?.navigateToExternalUrl(preview.data!, true).catch(() => window.open(preview.data!, "_blank", "noopener"))}>
-              <Icon path={mdiOpenInNew} className="size-4" />
-              Preview
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {preview.data && (
+              <Button variant="ghost" size="sm" onClick={() => void client?.navigateToExternalUrl(preview.data!, true).catch(() => window.open(preview.data!, "_blank", "noopener"))}>
+                <Icon path={mdiOpenInNew} className="size-4" />
+                Preview
+              </Button>
+            )}
+            {builder && (
+              <Button variant="outline" size="sm" onClick={builder.open} title="Open this page in SitecoreAI Page builder (new tab)">
+                <Icon path={mdiPencilBoxOutline} className="size-4" />
+                Edit in Page builder
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Page actions">

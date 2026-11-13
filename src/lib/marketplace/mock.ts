@@ -61,9 +61,9 @@ function add(name: string, parent: MockItem | null, kind: Kind, extra: Partial<M
 /* ---------------- sample content: an outdoor gear brand ---------------- */
 const sitecore = add("sitecore", null, "root");
 const templates = add("templates", sitecore, "folder");
-const feature = add("Feature", templates, "folder");
-const jssxa = add("JSS Experience Accelerator", feature, "folder");
-const redirTpl = add("Redirects", jssxa, "folder");
+const foundation = add("Foundation", templates, "folder");
+const sxa = add("Experience Accelerator", foundation, "folder");
+const redirTpl = add("Redirects", sxa, "folder");
 add("Redirect Map", redirTpl, "template", { id: T_REDIRECT_MAP });
 const common = add("Common", templates, "folder");
 add("Folder", common, "template", { id: T_FOLDER });
@@ -492,6 +492,7 @@ export function createMockClient() {
             name: "Page Operations",
             url: window.location.origin,
             installationId: "sample-install",
+            organizationId: "org_sample",
             resourceAccess: [
               { resourceId: "xmcloud", tenantId: "t-prod", tenantName: "northwind-prod", tenantDisplayName: "Northwind Production (sample)", context: { live: "live-prod", preview: "preview-prod" } },
               { resourceId: "xmcloud", tenantId: "t-dev", tenantName: "northwind-dev", tenantDisplayName: "Northwind Development (sample)", context: { live: "live-dev", preview: "preview-dev" } },

@@ -28,7 +28,7 @@ async function attempt<T>(fn: () => Promise<T>): Promise<{ ok: true; value: T } 
   }
 }
 
-export async function runSetupCheck(api: SitecoreApi, settings: AppSettings): Promise<SetupResult> {
+export async function runSetupCheck(api: SitecoreApi, settings: AppSettings, ctx?: { tenant?: string; organization?: string }): Promise<SetupResult> {
   const checks: Check[] = [];
   const add = (c: Check) => checks.push(c);
 
@@ -110,6 +110,18 @@ export async function runSetupCheck(api: SitecoreApi, settings: AppSettings): Pr
       ? { id: "team", label: "Shared with your team", status: "pass", detail: "Settings, activity and the not-live list are stored in Sitecore for everyone on this site.", affects: "Activity, undo, settings" }
       : { id: "team", label: "Shared with your team", status: "warn", detail: `Kept in this browser only: ${store.reason ?? "couldn’t create the Page Operations folder"}`, affects: "Activity, undo, settings" },
   );
+
+  {
+    const { pageBuilderUrl } = await import("./page-builder");
+    const url = pageBuilderUrl({ id: root.value.id, language: api.language }, { site: api.site.name, tenant: ctx?.tenant, organization: ctx?.organization }, settings);
+    add(
+      !url
+        ? { id: "builder", label: "Page builder link", status: "skip", detail: "Turned off in Settings.", affects: "Edit in Page builder", fix: "settings" }
+        : ctx?.tenant
+          ? { id: "builder", label: "Page builder link", status: "pass", detail: `Opens pages in ${new URL(url).host} for ${ctx.tenant}`, affects: "Edit in Page builder" }
+          : { id: "builder", label: "Page builder link", status: "warn", detail: "The environment’s tenant name isn’t available, so Page builder may ask which environment to open.", affects: "Edit in Page builder" },
+    );
+  }
 
   add(
     settings.gscClientId && settings.gscProperty

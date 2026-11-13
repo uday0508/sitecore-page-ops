@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAsync } from "@/hooks/use-async";
+import { usePageBuilderLink } from "@/hooks/use-sitecore";
 import { logActivity } from "@/lib/activity";
 import { Icon } from "@/lib/icon";
 import { useMarketplace } from "@/lib/marketplace/provider";
@@ -424,6 +425,7 @@ const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString(undefined, { d
 
 export function DetailsContent({ api, page, showLive = true }: { api: SitecoreApi; page: PageRef; showLive?: boolean }) {
   const { client } = useMarketplace();
+  const builderLink = usePageBuilderLink()({ id: page.id, language: page.language, version: page.meta?.version }, api.site.name);
   const live = useAsync(() => api.liveState(page.id, page.language), [api, page.id]);
   const preview = useAsync(() => api.previewUrl(page.id, page.language).catch(() => null), [api, page.id]);
   const [shot, setShot] = useState<{ loading: boolean; src: string | null; error: string | null }>({ loading: false, src: null, error: null });
@@ -510,6 +512,13 @@ export function DetailsContent({ api, page, showLive = true }: { api: SitecoreAp
               {m.isPublishable === false ? "Publishing is turned off for this page. " : ""}
               {m.validFrom ? `From ${fmt(m.validFrom)}. ` : ""}
               {m.validTo ? `Until ${fmt(m.validTo)}.` : ""}
+            </Fact>
+          )}
+          {builderLink && (
+            <Fact label="Page builder" copy={builderLink.url}>
+              <button type="button" onClick={builderLink.open} className="text-left text-primary-fg underline">
+                Open in Page builder
+              </button>
             </Fact>
           )}
           <Fact label="Item ID" copy={page.id}>

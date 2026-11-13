@@ -6,6 +6,8 @@ export interface Environment {
   id: string;
   name: string;
   tenant?: string;
+  /** Organization that owns the environment (for Page builder links) */
+  organization?: string;
   /** Preview context ID: used for Authoring/Pages/Sites APIs */
   contextId: string;
 }
@@ -25,6 +27,8 @@ export interface MarketplaceState {
   environmentId: string | null;
   /** True when the user (or storage) has picked an environment */
   environmentChosen: boolean;
+  /** The selected environment */
+  environment: Environment | null;
   selectEnvironment: (id: string | null) => void;
   appContext: ApplicationContext | null;
   user: { name?: string; email?: string } | null;
@@ -37,7 +41,7 @@ const envKey = (installation?: string) => `page-ops:env:${installation ?? "defau
 
 export function MarketplaceProvider({ children }: { children: ReactNode }) {
   const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<Omit<MarketplaceState, "retry" | "contextId" | "tenantName" | "environmentId" | "environmentChosen" | "selectEnvironment">>({
+  const [state, setState] = useState<Omit<MarketplaceState, "retry" | "contextId" | "tenantName" | "environmentId" | "environmentChosen" | "environment" | "selectEnvironment">>({
     status: "connecting",
     error: null,
     client: null,
@@ -70,6 +74,7 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
               id,
               name: r.tenantDisplayName ?? r.tenantName ?? "Environment",
               tenant: r.tenantName,
+              organization: appContext?.organizationId,
               contextId: r.context.preview,
             };
           });
@@ -125,6 +130,7 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
       tenantName: env?.name,
       environmentId: env?.id ?? null,
       environmentChosen: !!envId,
+      environment: env ?? null,
       selectEnvironment,
     };
   }, [state, retry, envId, selectEnvironment]);

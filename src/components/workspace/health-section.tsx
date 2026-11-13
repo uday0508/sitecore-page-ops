@@ -40,7 +40,7 @@ import { fetchSearchConsolePages, loadNotFound, parseNotFoundCsv, saveNotFound, 
 import { addRedirects, changeUrl } from "@/lib/ops/operations";
 import { loadScan, type PageHealth, type ScanPhase, type SiteScan } from "@/lib/ops/scan";
 import { cancelJob, runListJob } from "@/lib/jobs";
-import { useJobs } from "@/hooks/use-sitecore";
+import { useJobs, usePageBuilderLink } from "@/hooks/use-sitecore";
 import { SCAN_EVENT, startScan } from "./scan-job";
 import type { SitecoreApi } from "@/lib/sitecore/api";
 import { lastSegment } from "@/lib/sitecore/routes";
@@ -66,17 +66,25 @@ function Empty({ children }: { children: ReactNode }) {
   return <p className="rounded-lg border px-4 py-10 text-center text-md text-subtle-text">{children}</p>;
 }
 
-function OpenButton({ id, nav }: { id: string; nav: Nav }) {
+function OpenButton({ id, nav, edit }: { id: string; nav: Nav; edit?: (() => void) | null }) {
   return (
-    <Button size="xs" variant="ghost" onClick={() => nav({ section: "pages", pageId: id })}>
-      Open
-    </Button>
+    <span className="inline-flex gap-1">
+      <Button size="xs" variant="ghost" onClick={() => nav({ section: "pages", pageId: id })}>
+        Open
+      </Button>
+      {edit && (
+        <Button size="xs" variant="ghost" colorScheme="primary" onClick={edit} title="Edit in Page builder (new tab)">
+          Edit
+        </Button>
+      )}
+    </span>
   );
 }
 
 /** Site-wide reports. One scan feeds the first four; URL issues and 404s need no scan. */
 export function HealthSection({ api, redirects, nav, initialReport }: { api: SitecoreApi; redirects: AsyncState<RedirectState>; nav: Nav; initialReport?: string }) {
   const [settings, saveSettings] = useSettings();
+  const link = usePageBuilderLink();
   const [scan, setScan] = useState<SiteScan | null>(null);
   const jobs = useJobs();
   const scanJob = jobs.find((j) => j.id === `scan:${api.site.name}`);
@@ -219,7 +227,7 @@ export function HealthSection({ api, redirects, nav, initialReport }: { api: Sit
               </TableCell>
             ))}
             <TableCell className="text-right">
-              <OpenButton id={p.id} nav={nav} />
+              <OpenButton id={p.id} nav={nav} edit={link({ id: p.id, language: api.language }, api.site.name)?.open} />
             </TableCell>
           </TableRow>
         ))}
@@ -507,7 +515,7 @@ export function HealthSection({ api, redirects, nav, initialReport }: { api: Sit
                   </TableCell>
                   <TableCell className="text-sm text-subtle-text">{r.issue}</TableCell>
                   <TableCell className="text-right">
-                    <OpenButton id={r.id} nav={nav} />
+                    <OpenButton id={r.id} nav={nav} edit={link({ id: r.id, language: api.language }, api.site.name)?.open} />
                   </TableCell>
                 </TableRow>
               ))}
