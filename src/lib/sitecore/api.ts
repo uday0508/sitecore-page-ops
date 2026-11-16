@@ -746,71 +746,69 @@ export class SitecoreApi {
     return r?.createItem?.item?.itemId;
   }
 
-  /* ---------- App folders (team storage and bin) ---------- */
+  /* ---------- The app's own folder: {site}/Settings/Page Operations ---------- */
 
-  private appBaseP: Promise<string> | null = null;
+  private appRootP: Promise<{ path: string; id: string }> | null = null;
 
   /**
-   * Where the app keeps its own items: the site's Settings item, which Page builder doesn't show
-   * (next to Settings/Redirects). Earlier versions used the site root, where Page builder listed them
-   * as folders next to Home; those are moved here once, with everything in them.
+   * One folder for everything the app keeps: team settings (on the folder), Activity, Pending and Bin.
+   * It sits in the site's Settings item (next to Settings/Redirects), which Page builder doesn't show,
+   * and has Never publish on, so nothing in it reaches the live site.
+   * Earlier layouts (folders next to Home, or a separate "Page Operations Bin") are moved in once.
    */
-  appBase(): Promise<string> {
-    if (!this.appBaseP) {
-      this.appBaseP = (async () => {
+  appRoot(): Promise<{ path: string; id: string }> {
+    if (!this.appRootP) {
+      this.appRootP = (async () => {
         const { rootPath } = await this.sitePaths();
-        const settings = `${rootPath}/Settings`;
-        const settingsId = await this.itemIdByPath(settings);
-        if (!settingsId) return rootPath; // no Settings item: keep the old location
-        for (const name of ["Page Operations", "Page Operations Bin"]) {
-          const oldId = await this.itemIdByPath(`${rootPath}/${name}`);
-          if (!oldId) continue;
-          const newId = await this.itemIdByPath(`${settings}/${name}`);
-          if (!newId) {
-            await this.gql(MOVE_ITEM, { id: oldId, targetParentId: settingsId });
-          } else {
-            // Both exist: bring the contents across, then remove the empty old folder.
-            const moveAll = async (fromId: string, toId: string) => {
-              const toKids = (await this.children({ id: toId }))?.items ?? [];
-              for (const k of (await this.children({ id: fromId }))?.items ?? []) {
-                const same = toKids.find((t) => t.name.toLowerCase() === k.name.toLowerCase() && /folder/i.test(t.template ?? "") && /folder/i.test(k.template ?? ""));
-                if (same) await moveAll(k.id, same.id);
-                else await this.gql(MOVE_ITEM, { id: k.id, targetParentId: toId });
-              }
-            };
-            await moveAll(oldId, newId);
-            await this.gql(DELETE_ITEM, { id: oldId, permanently: false });
-          }
+        const settingsPath = (await this.itemIdByPath(`${rootPath}/Settings`)) ? `${rootPath}/Settings` : rootPath;
+        const path = `${settingsPath}/Page Operations`;
+        let id = await this.itemIdByPath(path);
+        const oldRoot = settingsPath !== rootPath ? await this.itemIdByPath(`${rootPath}/Page Operations`) : null;
+        if (!id && oldRoot) {
+          await this.gql(MOVE_ITEM, { id: oldRoot, targetParentId: (await this.itemIdByPath(settingsPath))! });
+          id = oldRoot;
+        } else if (id && oldRoot) {
+          await this.mergeInto(oldRoot, id);
+        }
+        if (!id) id = await this.ensureFolder(path, settingsPath, true);
+        // Always enforce Never publish, even on a folder brought over from an earlier layout.
+        if (!(await this.pageFlags(id)).neverPublish) await this.setFlags(id, { neverPublish: true });
+        // Old separate bins: move their pages into Page Operations/Bin.
+        for (const old of [`${rootPath}/Page Operations Bin`, `${settingsPath}/Page Operations Bin`]) {
+          const oldBin = await this.itemIdByPath(old);
+          if (!oldBin) continue;
+          const bin = await this.ensureFolder(`${path}/Bin`, path, true);
+          await this.mergeInto(oldBin, bin);
         }
         this.invalidate();
-        return settings;
+        return { path, id };
       })();
-      this.appBaseP.catch(() => (this.appBaseP = null));
+      this.appRootP.catch(() => (this.appRootP = null));
     }
-    return this.appBaseP;
+    return this.appRootP;
+  }
+
+  /** Move everything from one folder into another (merging same-named folders), then recycle the empty one. */
+  private async mergeInto(fromId: string, toId: string) {
+    const toKids = (await this.children({ id: toId }))?.items ?? [];
+    for (const k of (await this.children({ id: fromId }))?.items ?? []) {
+      const same = toKids.find((t) => t.name.toLowerCase() === k.name.toLowerCase() && /folder/i.test(t.template ?? "") && /folder/i.test(k.template ?? ""));
+      if (same) await this.mergeInto(k.id, same.id);
+      else await this.gql(MOVE_ITEM, { id: k.id, targetParentId: toId });
+    }
+    await this.gql(DELETE_ITEM, { id: fromId, permanently: false });
   }
 
   async binPath() {
-    return `${await this.appBase()}/Page Operations Bin`;
+    return `${(await this.appRoot()).path}/Bin`;
   }
 
-  /** The bin is a folder in Settings with "Never publish" on, so nothing in it ever goes live. */
+  /** Pages in the bin can't go live: the bin and its parent have Never publish on. */
   async ensureBin(): Promise<string> {
-    const path = await this.binPath();
-    const found = await this.itemIdByPath(path);
-    if (found) return found;
-    const parentPath = path.slice(0, path.lastIndexOf("/"));
-    const parent = await this.itemIdByPath(parentPath);
-    const templateId = await this.templateIdByPath(["/sitecore/templates/Common/Folder"]);
-    if (!parent || !templateId) throw new SitecoreError("Couldn’t create the Page Operations bin.");
-    const r = await this.gql<any>(CREATE_ITEM, {
-      name: "Page Operations Bin",
-      templateId,
-      parent,
-      language: this.language,
-      fields: [{ name: "__Never publish", value: "1" }],
-    });
-    return r?.createItem?.item?.itemId;
+    const { path } = await this.appRoot();
+    const id = await this.ensureFolder(`${path}/Bin`, path, true);
+    if (!(await this.pageFlags(id)).neverPublish) await this.setFlags(id, { neverPublish: true });
+    return id;
   }
 
   async moveToBin(page: PageRef, by?: string) {

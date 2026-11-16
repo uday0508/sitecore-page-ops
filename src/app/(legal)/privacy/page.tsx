@@ -35,10 +35,10 @@ export default function PrivacyPage() {
           entries contain the name or email of the user who made the change, the page title and URL, and what changed.
         </li>
         <li>
-          A <strong>Page Operations Bin</strong> folder holding pages deleted through the app, with a note of where each came from.
+          A <strong>Bin</strong> folder inside it, holding pages deleted through the app, with a note of where each came from.
         </li>
       </ul>
-      <p>Both folders are set to never publish, so they never reach your live site. They stay until you delete them. You control this data like any other content in Sitecore.</p>
+      <p>The folder is set to never publish, so they never reach your live site. Activity older than 180 days is removed automatically (the latest 500 entries are always kept); everything else stays until you delete it. You control this data like any other content in Sitecore.</p>
 
       <h3>Stored in the user’s browser</h3>
       <p>
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
 
       <h2>Your choices and rights</h2>
       <ul>
-        <li>Delete the Page Operations and Page Operations Bin folders in Sitecore to remove the app’s stored data for a site.</li>
+        <li>Delete the Settings/Page Operations folder in Sitecore to remove the app’s stored data for a site.</li>
         <li>Clear the browser’s site data to remove local copies.</li>
         <li>Uninstall the app from the Sitecore Cloud Portal at any time.</li>
         <li>

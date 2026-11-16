@@ -141,6 +141,7 @@ export async function syncActivity(site: string) {
   if (!store) return;
   const notes = await store.list<ActivityEntry>("activity");
   remote.set(site, notes.map((n) => ({ ...n.data, noteId: n.itemId })));
+  void store.prune(notes).catch(() => {});
   window.dispatchEvent(new CustomEvent(EVENT));
 }
 

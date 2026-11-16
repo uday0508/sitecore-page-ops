@@ -1,6 +1,6 @@
 /**
  * Team storage in Sitecore, so settings, activity and the "not live yet" list are the same for
- * everyone working on a site. Lives in {site}/Settings/Page Operations (Never publish, so it never reaches
+ * everyone working on a site. Lives in {site}/Settings/Page Operations (Activity, Pending, Bin) (Never publish, so it never reaches
  * the live site). Each activity entry and pending item is its own item: no write races between authors.
  * If the folder can't be created (permissions), everything keeps working in this browser only.
  */
@@ -30,10 +30,9 @@ export class TeamStore {
     if (!this.folders) {
       this.folders = (async () => {
         try {
-          const base = await this.api.appBase();
-          const root = await this.api.ensureFolder(`${base}/Page Operations`, base, true);
-          const activity = await this.api.ensureFolder(`${base}/Page Operations/Activity`, `${base}/Page Operations`);
-          const pending = await this.api.ensureFolder(`${base}/Page Operations/Pending`, `${base}/Page Operations`);
+          const { path, id: root } = await this.api.appRoot();
+          const activity = await this.api.ensureFolder(`${path}/Activity`, path);
+          const pending = await this.api.ensureFolder(`${path}/Pending`, path);
           this.available = true;
           return { root, activity, pending };
         } catch (e) {
@@ -59,6 +58,24 @@ export class TeamStore {
       }
     }
     return out;
+  }
+
+  /**
+   * Keep activity from growing forever: entries older than `days` are recycled, but the newest
+   * `keep` always stay. Runs at most once a day per site, in the background.
+   */
+  async prune<T extends { at?: string }>(notes: Note<T>[], days = 180, keep = 500) {
+    const k = `page-ops:pruned:${this.key}`;
+    try {
+      if (Date.now() - Number(window.localStorage.getItem(k) ?? 0) < 86400000) return;
+      window.localStorage.setItem(k, String(Date.now()));
+    } catch {
+      // storage blocked: prune anyway
+    }
+    const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+    const sorted = [...notes].sort((a, b) => String(b.data.at ?? "").localeCompare(String(a.data.at ?? "")));
+    // Beyond the newest `keep`, anything older than the cutoff goes.
+    for (const n of sorted.slice(keep)) if (!n.data.at || n.data.at < cutoff) await this.remove(n.itemId);
   }
 
   async add<T>(kind: "activity" | "pending", name: string, data: T) {
