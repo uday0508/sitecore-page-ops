@@ -33,11 +33,11 @@ Force it with `?mock` or `NEXT_PUBLIC_MOCK=1`.
 - **Not live yet**: every change made through the app is remembered until it's published. The top bar (and the Pages panel) shows "N not live" with one **Publish all**. Publishing anything from the app removes it from the list.
 - **Background jobs**: the site scan, bulk publish/move/delete/fix and publish-all run outside the screen that started them, so they keep going while you work. Progress is in the top bar.
 - **Setup check** (gear icon): tests the home page, the Authoring API mutations the app uses, the redirects folder and template, link search, page content access, live status, the agent API, team storage and Search Console, and says what each affects.
-- **Shared with the team**: settings, activity (with who did what, and undo from any browser) and the not-live list are stored in Sitecore under `{site}/Page Operations` (with *Never publish* on, so it never reaches the live site). Each entry is its own item, so authors never overwrite each other. If that folder can't be created, the app keeps working in each browser and the setup check says so.
+- **Shared with the team**: settings, activity (with who did what, and undo from any browser) and the not-live list are stored in Sitecore under `{site}/Settings/Page Operations` (with *Never publish* on, so it never reaches the live site). Each entry is its own item, so authors never overwrite each other. If that folder can't be created, the app keeps working in each browser and the setup check says so.
 
 ## App icon
 
-`public/app-icon.svg` and `public/app-icon-512.png` are the Marketplace listing icon. `src/app/icon.svg` is the browser favicon, and the same mark sits in the app's top bar.
+`public/app-icon-512.png` (and `app-icon-1024.png`) is the Marketplace listing icon. `src/app/icon.png` is the browser favicon, and the same mark sits in the app's top bar.
 
 ## Search Console (optional, for the 404 report)
 
@@ -107,7 +107,7 @@ each parent) many pages at once, with progress and a list of anything that faile
 
 **Schedule**: go-live and take-down dates (the item's `__Publish` / `__Unpublish`). Sitecore applies them at the next publish after each date.
 
-**Bin**: Delete moves the page to a "Page Operations Bin" folder next to Home and turns on "Never publish", so it can't go live. Where it came from is stored on the item (`__Long description`), so anyone can restore it from Pages → Bin. "Delete for good" sends it to Sitecore's recycle bin.
+**Bin**: Delete moves the page to a "Page Operations Bin" folder in the site's Settings item (hidden from Page builder) and turns on "Never publish", so it can't go live. Where it came from is stored on the item (`__Long description`), so anyone can restore it from Pages → Bin. "Delete for good" sends it to Sitecore's recycle bin.
 
 **Make shared content local**: copies a component's shared content into the page's own Data folder and points the component at the copy (in `__Final Renderings`). Content set in the page design is reported, not changed. Also offered when duplicating.
 
@@ -116,6 +116,8 @@ each parent) many pages at once, with progress and a list of anything that faile
 **Accessibility**: images without alt text (rich text, and image fields whose media item has no Alt), empty or vague links, skipped headings, extra Heading 1s, tables without headers. Alt text can be added inline.
 
 **Find and replace**: on one page, a section or the whole site. Only visible text by default (not links or markup), every match approved first, optionally saved as new versions, undoable.
+
+**Edit in Page builder**: every page has a button (page header, Details, Health reports) that opens it in SitecoreAI Page builder in a new tab, with the right tenant, organization, site, language and version. The link pattern is in Settings in case Sitecore changes it.
 
 **After every change** — publish the page (with children), the redirect maps and the referring pages
 in one step, and undo from the confirmation, a toast, the panel or Activity.

@@ -1,6 +1,6 @@
 /**
  * Team storage in Sitecore, so settings, activity and the "not live yet" list are the same for
- * everyone working on a site. Lives in {site}/Page Operations (Never publish, so it never reaches
+ * everyone working on a site. Lives in {site}/Settings/Page Operations (Never publish, so it never reaches
  * the live site). Each activity entry and pending item is its own item: no write races between authors.
  * If the folder can't be created (permissions), everything keeps working in this browser only.
  */
@@ -30,10 +30,10 @@ export class TeamStore {
     if (!this.folders) {
       this.folders = (async () => {
         try {
-          const { rootPath } = await this.api.sitePaths();
-          const root = await this.api.ensureFolder(`${rootPath}/Page Operations`, rootPath, true);
-          const activity = await this.api.ensureFolder(`${rootPath}/Page Operations/Activity`, `${rootPath}/Page Operations`);
-          const pending = await this.api.ensureFolder(`${rootPath}/Page Operations/Pending`, `${rootPath}/Page Operations`);
+          const base = await this.api.appBase();
+          const root = await this.api.ensureFolder(`${base}/Page Operations`, base, true);
+          const activity = await this.api.ensureFolder(`${base}/Page Operations/Activity`, `${base}/Page Operations`);
+          const pending = await this.api.ensureFolder(`${base}/Page Operations/Pending`, `${base}/Page Operations`);
           this.available = true;
           return { root, activity, pending };
         } catch (e) {

@@ -31,7 +31,7 @@ export default function PrivacyPage() {
       <p>So that teams share one setup and one history, the app keeps the following in your Sitecore environment:</p>
       <ul>
         <li>
-          A <strong>Page Operations</strong> folder under each site with the app’s settings, an activity history and the list of changes waiting to be published. Activity
+          A <strong>Page Operations</strong> folder in each site’s Settings with the app’s settings, an activity history and the list of changes waiting to be published. Activity
           entries contain the name or email of the user who made the change, the page title and URL, and what changed.
         </li>
         <li>

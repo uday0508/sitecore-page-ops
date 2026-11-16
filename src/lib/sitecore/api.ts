@@ -746,26 +746,67 @@ export class SitecoreApi {
     return r?.createItem?.item?.itemId;
   }
 
-  /* ---------- Bin ---------- */
+  /* ---------- App folders (team storage and bin) ---------- */
 
-  async binPath() {
-    const { rootPath } = await this.sitePaths();
-    return `${rootPath}/Page Operations Bin`;
+  private appBaseP: Promise<string> | null = null;
+
+  /**
+   * Where the app keeps its own items: the site's Settings item, which Page builder doesn't show
+   * (next to Settings/Redirects). Earlier versions used the site root, where Page builder listed them
+   * as folders next to Home; those are moved here once, with everything in them.
+   */
+  appBase(): Promise<string> {
+    if (!this.appBaseP) {
+      this.appBaseP = (async () => {
+        const { rootPath } = await this.sitePaths();
+        const settings = `${rootPath}/Settings`;
+        const settingsId = await this.itemIdByPath(settings);
+        if (!settingsId) return rootPath; // no Settings item: keep the old location
+        for (const name of ["Page Operations", "Page Operations Bin"]) {
+          const oldId = await this.itemIdByPath(`${rootPath}/${name}`);
+          if (!oldId) continue;
+          const newId = await this.itemIdByPath(`${settings}/${name}`);
+          if (!newId) {
+            await this.gql(MOVE_ITEM, { id: oldId, targetParentId: settingsId });
+          } else {
+            // Both exist: bring the contents across, then remove the empty old folder.
+            const moveAll = async (fromId: string, toId: string) => {
+              const toKids = (await this.children({ id: toId }))?.items ?? [];
+              for (const k of (await this.children({ id: fromId }))?.items ?? []) {
+                const same = toKids.find((t) => t.name.toLowerCase() === k.name.toLowerCase() && /folder/i.test(t.template ?? "") && /folder/i.test(k.template ?? ""));
+                if (same) await moveAll(k.id, same.id);
+                else await this.gql(MOVE_ITEM, { id: k.id, targetParentId: toId });
+              }
+            };
+            await moveAll(oldId, newId);
+            await this.gql(DELETE_ITEM, { id: oldId, permanently: false });
+          }
+        }
+        this.invalidate();
+        return settings;
+      })();
+      this.appBaseP.catch(() => (this.appBaseP = null));
+    }
+    return this.appBaseP;
   }
 
-  /** The bin is a folder outside Home with "Never publish" on, so nothing in it ever goes live. */
+  async binPath() {
+    return `${await this.appBase()}/Page Operations Bin`;
+  }
+
+  /** The bin is a folder in Settings with "Never publish" on, so nothing in it ever goes live. */
   async ensureBin(): Promise<string> {
     const path = await this.binPath();
-    const found = await this.gql<any>(GET_ITEM_ID_BY_PATH, { path });
-    if (found?.item?.itemId) return found.item.itemId;
-    const { rootPath } = await this.sitePaths();
-    const parent = await this.gql<any>(GET_ITEM_ID_BY_PATH, { path: rootPath });
+    const found = await this.itemIdByPath(path);
+    if (found) return found;
+    const parentPath = path.slice(0, path.lastIndexOf("/"));
+    const parent = await this.itemIdByPath(parentPath);
     const templateId = await this.templateIdByPath(["/sitecore/templates/Common/Folder"]);
-    if (!parent?.item?.itemId || !templateId) throw new SitecoreError("Couldn’t create the Page Operations bin.");
+    if (!parent || !templateId) throw new SitecoreError("Couldn’t create the Page Operations bin.");
     const r = await this.gql<any>(CREATE_ITEM, {
       name: "Page Operations Bin",
       templateId,
-      parent: parent.item.itemId,
+      parent,
       language: this.language,
       fields: [{ name: "__Never publish", value: "1" }],
     });
